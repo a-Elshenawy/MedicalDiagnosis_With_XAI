@@ -61,10 +61,11 @@ st.title("🩺 Disease Prediction AI System")
 st.write("Arabic + English | LIME + SHAP | Model v1/v2")
 
 # =========================
-# SESSION STATE INITIALIZATION
 # =========================
-if "user_symptoms" not in st.session_state:
-    st.session_state.user_symptoms = ""
+# SESSION STATE INIT
+# =========================
+if "symptom_input" not in st.session_state:
+    st.session_state.symptom_input = ""
 
 # =========================
 # EXAMPLES
@@ -81,13 +82,15 @@ cols = st.columns(len(examples))
 
 for i, ex in enumerate(examples):
     if cols[i].button(ex):
-        st.session_state.user_symptoms = ex
+        st.session_state.symptom_input = ex
 
 # =========================
-# USER INPUT
+# INPUT BOX (FIXED)
 # =========================
-user_input = st.text_area("Enter symptoms:", value=st.session_state.user_symptoms, key="symptom_input")
-st.session_state.user_symptoms = user_input
+user_input = st.text_area(
+    "Enter symptoms:",
+    key="symptom_input"
+)
 
 # =========================
 # PREDICT
