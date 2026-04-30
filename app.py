@@ -22,7 +22,12 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-logging.info("App started")
+# =========================
+# SESSION INITIAL LOG CONTROL
+# =========================
+if "init_logged" not in st.session_state:
+    logging.info("App session started")
+    st.session_state.init_logged = True
 
 # =========================
 # MODEL LOADER
@@ -48,7 +53,13 @@ MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
 st.sidebar.title("⚙️ Model Control")
 version = st.sidebar.selectbox("Choose Model Version", ["v1", "v2"])
 
-logging.info(f"Selected model version: {version}")
+# log ONLY when user changes model
+if "last_version" not in st.session_state:
+    st.session_state.last_version = version
+
+if version != st.session_state.last_version:
+    logging.info(f"Model switched to: {version}")
+    st.session_state.last_version = version
 
 # =========================
 # LOAD MODEL
@@ -64,8 +75,6 @@ label_map = data["label_map"]
 class_names = data["class_names"]
 feature_names = data["feature_names"]
 
-logging.info("Model loaded successfully")
-
 # =========================
 # EXPLAINERS
 # =========================
@@ -75,13 +84,13 @@ X_sample = vectorizer.transform(["fever headache cough"] * 50)
 shap_explainer = build_shap_explainer(model, X_sample)
 
 # =========================
-# UI HEADER
+# UI
 # =========================
 st.title("🩺 Disease Prediction AI System")
-st.write("Arabic + English | LIME + SHAP | Logging Enabled")
+st.write("Arabic + English | LIME + SHAP | Clean Logging System")
 
 # =========================
-# SESSION STATE (FIXED INPUT)
+# SESSION INPUT STATE
 # =========================
 if "symptom_input" not in st.session_state:
     st.session_state.symptom_input = ""
@@ -110,87 +119,73 @@ for i, ex in enumerate(examples):
 user_input = st.text_area("Enter symptoms:", key="symptom_input")
 
 # =========================
-# PREDICTION
+# PREDICT
 # =========================
 if st.button("Predict"):
 
     if not user_input or not user_input.strip():
         st.warning("Please enter symptoms")
-        logging.warning("Empty input")
+        logging.warning("Empty input submitted")
         st.stop()
 
-    try:
-        logging.info(f"User input: {user_input}")
+    logging.info(f"User input: {user_input}")
 
-        arabic = is_arabic(user_input)
+    arabic = is_arabic(user_input)
 
-        processed = to_english(user_input) if arabic else user_input
-        processed = basic_clean(processed)
+    processed = to_english(user_input) if arabic else user_input
+    processed = basic_clean(processed)
 
-        logging.info(f"Processed input: {processed}")
+    X = vectorizer.transform([processed])
 
-        X = vectorizer.transform([processed])
+    pred = model.predict(X)[0]
+    probs = model.predict_proba(X)[0]
+    conf = float(np.max(probs))
 
-        pred = model.predict(X)[0]
-        probs = model.predict_proba(X)[0]
-        conf = float(np.max(probs))
+    disease = label_map.get(pred, str(pred))
+    rule_msg = apply_rules(conf)
 
-        disease = label_map.get(pred, str(pred))
-        rule_msg = apply_rules(conf)
+    logging.info(f"Prediction: {disease} | Confidence: {conf:.2f}")
 
-        logging.info(f"Prediction: {disease}")
-        logging.info(f"Confidence: {conf}")
+    # =========================
+    # EXPLANATIONS
+    # =========================
+    lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
+    shap_exp = explain_shap(shap_explainer, X, feature_names)
 
-        # =========================
-        # EXPLANATIONS
-        # =========================
-        lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
-        shap_exp = explain_shap(shap_explainer, X, feature_names)
+    # =========================
+    # SHAPES
+    # =========================
+    st.subheader("📊 Shapes")
+    st.write("Input shape:", len([processed]))
+    st.write("Vector shape:", X.shape)
+    st.write("Probability shape:", probs.shape)
 
-        logging.info("LIME + SHAP generated")
+    # =========================
+    # OUTPUT ENGLISH
+    # =========================
+    st.subheader("🇬🇧 English Output")
+    st.write("Disease:", disease)
+    st.write("Confidence:", conf)
+    st.write("Rule:", rule_msg)
 
-        # =========================
-        # SHAPES
-        # =========================
-        st.subheader("📊 Shapes")
-        st.write("Input shape:", len([processed]))
-        st.write("Vector shape:", X.shape)
-        st.write("Probability shape:", probs.shape)
+    st.subheader("🧠 LIME")
+    for w, v in lime_exp:
+        st.write(f"{w}: {v:.4f}")
 
-        # =========================
-        # ENGLISH OUTPUT
-        # =========================
-        st.subheader("🇬🇧 English Output")
-        st.write("Disease:", disease)
-        st.write("Confidence:", conf)
-        st.write("Rule:", rule_msg)
+    st.subheader("📊 SHAP")
+    for w, v in shap_exp:
+        st.write(f"{w}: {v:.4f}")
 
-        st.subheader("🧠 LIME")
-        for w, v in lime_exp:
-            st.write(f"{w}: {v:.4f}")
-
-        st.subheader("📊 SHAP")
-        for w, v in shap_exp:
-            st.write(f"{w}: {v:.4f}")
-
-        # =========================
-        # ARABIC OUTPUT
-        # =========================
-        st.subheader("🇸🇦 Arabic Output")
-        st.write("المرض:", to_arabic(disease) if arabic else disease)
-        st.write("الثقة:", conf)
-        st.write("القاعدة:", to_arabic(rule_msg) if arabic else rule_msg)
-
-        st.subheader("🧠 التفسير")
-        for w, v in lime_exp:
-            st.write(f"{to_arabic(w) if arabic else w}: {v:.4f}")
-
-    except Exception as e:
-        logging.error(str(e))
-        st.error("Error occurred — check logs")
+    # =========================
+    # OUTPUT ARABIC
+    # =========================
+    st.subheader("🇸🇦 Arabic Output")
+    st.write("المرض:", to_arabic(disease) if arabic else disease)
+    st.write("الثقة:", conf)
+    st.write("القاعدة:", to_arabic(rule_msg) if arabic else rule_msg)
 
 # =========================
-# LOG VIEWER (TOGGLE FIXED)
+# LOG VIEWER (FIXED TOGGLE)
 # =========================
 if "show_logs" not in st.session_state:
     st.session_state.show_logs = False
@@ -200,11 +195,12 @@ if st.sidebar.button("Toggle Logs"):
 
 if st.session_state.show_logs:
     with open("logs/app.log", "r") as f:
-        st.sidebar.text(f.read())
+        log_data = f.read()
 
-    with open("logs/app.log", "r") as f:
-        st.sidebar.download_button(
-            "Download Logs",
-            f.read(),
-            file_name="app.log"
-        )
+    st.sidebar.text_area("Logs", log_data, height=300)
+
+    st.sidebar.download_button(
+        "Download Logs",
+        data=log_data,
+        file_name="app.log"
+    )
