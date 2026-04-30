@@ -26,8 +26,8 @@ def load_model_from_drive(file_id, output_path):
 # =========================
 # MODEL IDS (PUT YOUR IDs HERE)
 # =========================
-MODEL_V1_ID = "PUT_V1_FILE_ID"
-MODEL_V2_ID = "PUT_V2_FILE_ID"
+MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
+MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
 
 # =========================
 # UI - MODEL SELECTION
