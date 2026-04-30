@@ -1,2 +1,15 @@
 # MedicalDiagnosis_With_XAI
-AI model trained to take Natural language symptoms input and diagnose based on that, with XAI (shape&amp;lime) that explains why the model predicted a certain disease.
+
+
+## Features
+- Arabic + English input support
+- Logistic Regression model
+- LIME explainable AI
+- Model versioning (v1 / v2)
+- Streamlit UI
+- Logging system
+
+## How to run
+```bash
+pip install -r requirements.txt
+streamlit run app.py
