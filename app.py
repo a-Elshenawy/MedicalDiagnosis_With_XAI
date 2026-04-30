@@ -8,7 +8,6 @@ import logging
 from utils.preprocess import basic_clean
 from utils.translate import is_arabic, to_english, to_arabic
 from utils.explain_lime import build_lime, explain_lime
-from utils.explain_shap import build_shap_explainer, explain_shap
 from utils.rules import apply_rules
 
 # =========================
@@ -22,11 +21,8 @@ logging.basicConfig(
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
-# =========================
-# SESSION INITIAL LOG CONTROL
-# =========================
 if "init_logged" not in st.session_state:
-    logging.info("App session started")
+    logging.info("Session started")
     st.session_state.init_logged = True
 
 # =========================
@@ -36,7 +32,7 @@ if "init_logged" not in st.session_state:
 def load_model(file_id, path):
     if not os.path.exists(path):
         url = f"https://drive.google.com/uc?id={file_id}"
-        gdown.download(url, path, quiet=False)
+        gdown.download(url, path, quiet=True)
 
     with open(path, "rb") as f:
         return pickle.load(f)
@@ -53,12 +49,12 @@ MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
 st.sidebar.title("⚙️ Model Control")
 version = st.sidebar.selectbox("Choose Model Version", ["v1", "v2"])
 
-# log ONLY when user changes model
+# log only when changed
 if "last_version" not in st.session_state:
     st.session_state.last_version = version
 
 if version != st.session_state.last_version:
-    logging.info(f"Model switched to: {version}")
+    logging.info(f"Switched model to {version}")
     st.session_state.last_version = version
 
 # =========================
@@ -73,36 +69,33 @@ model = data["model"]
 vectorizer = data["vectorizer"]
 label_map = data["label_map"]
 class_names = data["class_names"]
-feature_names = data["feature_names"]
 
 # =========================
-# EXPLAINERS
+# LIME SETUP ONLY
 # =========================
-lime_explainer = build_lime(class_names)
+@st.cache_resource
+def get_lime():
+    return build_lime(class_names)
 
-X_sample = vectorizer.transform(["fever headache cough"] * 50)
-shap_explainer = build_shap_explainer(model, X_sample)
+lime_explainer = get_lime()
 
 # =========================
 # UI
 # =========================
 st.title("🩺 Disease Prediction AI System")
-st.write("Arabic + English | LIME + SHAP | Clean Logging System")
+st.write("Arabic + English | LIME Explainability Only")
 
 # =========================
-# SESSION INPUT STATE
+# SESSION INPUT
 # =========================
 if "symptom_input" not in st.session_state:
     st.session_state.symptom_input = ""
 
-# =========================
-# EXAMPLES
-# =========================
 examples = [
-    "I have fever and headache",
-    "sore throat and cough",
+    "fever headache",
+    "sore throat cough",
     "ألم في الرأس",
-    "stomach pain and vomiting"
+    "stomach pain vomiting"
 ]
 
 st.subheader("💡 Examples")
@@ -113,9 +106,6 @@ for i, ex in enumerate(examples):
         st.session_state.symptom_input = ex
         logging.info(f"Example used: {ex}")
 
-# =========================
-# INPUT
-# =========================
 user_input = st.text_area("Enter symptoms:", key="symptom_input")
 
 # =========================
@@ -123,12 +113,12 @@ user_input = st.text_area("Enter symptoms:", key="symptom_input")
 # =========================
 if st.button("Predict"):
 
-    if not user_input or not user_input.strip():
+    if not user_input.strip():
         st.warning("Please enter symptoms")
-        logging.warning("Empty input submitted")
+        logging.warning("Empty input")
         st.stop()
 
-    logging.info(f"User input: {user_input}")
+    logging.info(f"Input: {user_input}")
 
     arabic = is_arabic(user_input)
 
@@ -147,18 +137,9 @@ if st.button("Predict"):
     logging.info(f"Prediction: {disease} | Confidence: {conf:.2f}")
 
     # =========================
-    # EXPLANATIONS
+    # LIME EXPLANATION ONLY
     # =========================
     lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
-    shap_exp = explain_shap(shap_explainer, X, feature_names)
-
-    # =========================
-    # SHAPES
-    # =========================
-    st.subheader("📊 Shapes")
-    st.write("Input shape:", len([processed]))
-    st.write("Vector shape:", X.shape)
-    st.write("Probability shape:", probs.shape)
 
     # =========================
     # OUTPUT ENGLISH
@@ -168,12 +149,8 @@ if st.button("Predict"):
     st.write("Confidence:", conf)
     st.write("Rule:", rule_msg)
 
-    st.subheader("🧠 LIME")
+    st.subheader("🧠 LIME Explanation")
     for w, v in lime_exp:
-        st.write(f"{w}: {v:.4f}")
-
-    st.subheader("📊 SHAP")
-    for w, v in shap_exp:
         st.write(f"{w}: {v:.4f}")
 
     # =========================
@@ -185,7 +162,7 @@ if st.button("Predict"):
     st.write("القاعدة:", to_arabic(rule_msg) if arabic else rule_msg)
 
 # =========================
-# LOG VIEWER (FIXED TOGGLE)
+# LOG VIEWER
 # =========================
 if "show_logs" not in st.session_state:
     st.session_state.show_logs = False
@@ -201,6 +178,6 @@ if st.session_state.show_logs:
 
     st.sidebar.download_button(
         "Download Logs",
-        data=log_data,
+        log_data,
         file_name="app.log"
     )
