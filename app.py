@@ -25,7 +25,7 @@ logging.basicConfig(
 logging.info("App started")
 
 # =========================
-# MODEL LOADER (GOOGLE DRIVE)
+# MODEL LOADER
 # =========================
 @st.cache_resource
 def load_model(file_id, path):
@@ -43,13 +43,16 @@ MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
 MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
 
 # =========================
-# SIDEBAR - MODEL VERSION
+# SIDEBAR
 # =========================
 st.sidebar.title("⚙️ Model Control")
 version = st.sidebar.selectbox("Choose Model Version", ["v1", "v2"])
 
 logging.info(f"Selected model version: {version}")
 
+# =========================
+# LOAD MODEL
+# =========================
 if version == "v1":
     data = load_model(MODEL_V1_ID, "model-v1.pkl")
 else:
@@ -78,7 +81,7 @@ st.title("🩺 Disease Prediction AI System")
 st.write("Arabic + English | LIME + SHAP | Logging Enabled")
 
 # =========================
-# SESSION STATE
+# SESSION STATE (FIXED INPUT)
 # =========================
 if "symptom_input" not in st.session_state:
     st.session_state.symptom_input = ""
@@ -113,7 +116,7 @@ if st.button("Predict"):
 
     if not user_input or not user_input.strip():
         st.warning("Please enter symptoms")
-        logging.warning("Empty input submitted")
+        logging.warning("Empty input")
         st.stop()
 
     try:
@@ -135,20 +138,21 @@ if st.button("Predict"):
         disease = label_map.get(pred, str(pred))
         rule_msg = apply_rules(conf)
 
-        logging.info(f"Prediction: {disease}, Confidence: {conf}")
+        logging.info(f"Prediction: {disease}")
+        logging.info(f"Confidence: {conf}")
 
-        # LIME
+        # =========================
+        # EXPLANATIONS
+        # =========================
         lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
-
-        # SHAP
         shap_exp = explain_shap(shap_explainer, X, feature_names)
 
-        logging.info("Explanations generated")
+        logging.info("LIME + SHAP generated")
 
         # =========================
         # SHAPES
         # =========================
-        st.subheader("📊 Data Shapes")
+        st.subheader("📊 Shapes")
         st.write("Input shape:", len([processed]))
         st.write("Vector shape:", X.shape)
         st.write("Probability shape:", probs.shape)
@@ -182,21 +186,25 @@ if st.button("Predict"):
             st.write(f"{to_arabic(w) if arabic else w}: {v:.4f}")
 
     except Exception as e:
-        logging.error(f"Error: {str(e)}")
-        st.error("Something went wrong. Check logs.")
+        logging.error(str(e))
+        st.error("Error occurred — check logs")
 
 # =========================
-# LOG VIEWER
+# LOG VIEWER (TOGGLE FIXED)
 # =========================
-st.sidebar.subheader("📜 Logs")
+if "show_logs" not in st.session_state:
+    st.session_state.show_logs = False
 
-if st.sidebar.button("Show Logs"):
+if st.sidebar.button("Toggle Logs"):
+    st.session_state.show_logs = not st.session_state.show_logs
+
+if st.session_state.show_logs:
     with open("logs/app.log", "r") as f:
         st.sidebar.text(f.read())
 
-with open("logs/app.log", "r") as f:
-    st.sidebar.download_button(
-        "Download Logs",
-        data=f.read(),
-        file_name="app.log"
-    )
+    with open("logs/app.log", "r") as f:
+        st.sidebar.download_button(
+            "Download Logs",
+            f.read(),
+            file_name="app.log"
+        )
