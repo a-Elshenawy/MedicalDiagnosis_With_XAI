@@ -197,6 +197,8 @@ label_map     = data["label_map"]
 class_names   = data["class_names"]
 feature_names = data["feature_names"]
 
+# ✅ normalize keys to Python int
+label_map = {int(k): v for k, v in label_map.items()}
 
 st.write("Has predict_proba:", hasattr(model, "predict_proba"))
 
@@ -269,7 +271,8 @@ if predict_clicked:
     processed    = basic_clean(processed)
 
     X     = vectorizer.transform([processed])
-    pred  = model.predict(X)[0]
+    #pred  = model.predict(X)[0]
+    pred = int(np.array(model.predict(X)).flatten()[0])
     probs = model.predict_proba(X)[0]
     conf  = float(np.max(probs))
 
@@ -296,12 +299,10 @@ if predict_clicked:
     }
     st.session_state.display_arabic = arabic_input
     st.write({
-    "pred_raw":        pred,
-    "pred_type":       str(type(pred)),
-    "conf":            conf,
-    "label_map_sample": dict(list(label_map.items())[:5]),
-    "label_map_key_types": str(type(list(label_map.keys())[0])),
-    "disease_resolved": disease,
+        "pred_clean": pred,
+        "pred_type_clean": str(type(pred)),
+        "label_map_key_type_after_fix": str(type(list(label_map.keys())[0])),
+        "disease_resolved": disease,
     })
 # =========================
 # RESULTS
