@@ -262,14 +262,7 @@ if predict_clicked:
         st.warning("⚠️ Please enter at least one symptom.")
         logging.warning("Empty input submitted")
         st.stop()
-    st.write({
-    "pred_raw":        pred,
-    "pred_type":       str(type(pred)),
-    "conf":            conf,
-    "label_map_sample": dict(list(label_map.items())[:5]),
-    "label_map_key_types": str(type(list(label_map.keys())[0])),
-    "disease_resolved": disease,
-})
+
     logging.info(f"Input: {user_input}")
     arabic_input = is_arabic(user_input)
     processed    = to_english(user_input) if arabic_input else user_input
@@ -302,7 +295,14 @@ if predict_clicked:
         "lime_ar":      translate_pairs(lime_exp),
     }
     st.session_state.display_arabic = arabic_input
-
+        st.write({
+    "pred_raw":        pred,
+    "pred_type":       str(type(pred)),
+    "conf":            conf,
+    "label_map_sample": dict(list(label_map.items())[:5]),
+    "label_map_key_types": str(type(list(label_map.keys())[0])),
+    "disease_resolved": disease,
+})
 # =========================
 # RESULTS
 # =========================
