@@ -224,7 +224,7 @@ if "init_logged" not in st.session_state:
 @st.cache_resource
 def load_model(file_id, path):
     if not os.path.exists(path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)  # create models/ if missing
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         url = f"https://drive.google.com/uc?id={file_id}"
         gdown.download(url, path, quiet=True)
     with open(path, "rb") as f:
@@ -232,6 +232,25 @@ def load_model(file_id, path):
 
 MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
 MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
+
+# =========================
+# SHAP BACKGROUND LOADER
+# =========================
+SHAP_BG_PATH      = "shap_background_only.pkl"
+SHAP_BG_GDRIVE_ID = "1b4OLk4pXBddNhHOpgHlTOJvFs0xcSIf7"   # ← replace with your Drive file ID
+
+@st.cache_resource
+def load_shap_background(path, file_id):
+    if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        url = f"https://drive.google.com/uc?id={file_id}"
+        gdown.download(url, path, quiet=True)
+        logging.info("Downloaded SHAP background from Drive")
+    with open(path, "rb") as f:
+        bg_data = pickle.load(f)
+    bg = bg_data.get("shap_background")   # numpy array (300, 15209)
+    logging.info(f"SHAP background loaded: {bg.shape}")
+    return bg
 
 # =========================
 # SIDEBAR
@@ -279,6 +298,11 @@ class_names   = data["class_names"]
 feature_names = data["feature_names"]   # from pickle — matches model exactly
 
 # =========================
+# LOAD SHAP BACKGROUND
+# =========================
+shap_background = load_shap_background(SHAP_BG_PATH, SHAP_BG_GDRIVE_ID)
+
+# =========================
 # EXPLAINERS
 # =========================
 @st.cache_resource
@@ -286,11 +310,17 @@ def get_lime(_class_names):
     return build_lime(_class_names)
 
 @st.cache_resource
-def get_shap(_model, _feature_names):
-    return build_shap(_model, _feature_names)
+def get_shap(_model, _feature_names, _bg_shape):
+    # _bg_shape is a plain tuple — hashable, busts cache if dimensions ever change.
+    # The actual background array is fetched via the outer shap_background variable.
+    return build_shap(_model, _feature_names, background=shap_background)
 
 lime_explainer = get_lime(class_names)
-shap_explainer, shap_feature_names = get_shap(model, tuple(feature_names))
+shap_explainer, shap_feature_names = get_shap(
+    model,
+    tuple(feature_names),
+    shap_background.shape,          # hashable cache key
+)
 
 # =========================
 # HERO
@@ -306,7 +336,7 @@ if "symptom_input" not in st.session_state:
 if "result" not in st.session_state:
     st.session_state.result = None
 if "display_arabic" not in st.session_state:
-    st.session_state.display_arabic = None  # will be set on predict
+    st.session_state.display_arabic = None
 
 # =========================
 # EXAMPLES
@@ -385,7 +415,6 @@ if predict_clicked:
         "shap_en": shap_exp,
         "shap_ar": translate_pairs(shap_exp),
     }
-    # Default display language matches input language
     st.session_state.display_arabic = arabic_input
 
 # =========================
@@ -407,16 +436,16 @@ if st.session_state.result:
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Resolve display values ──
-    disease_show  = r["disease_ar"]  if ar else r["disease_en"]
-    rule_show     = r["rule_ar"]     if ar else r["rule_en"]
-    lime_show     = r["lime_ar"]     if ar else r["lime_en"]
-    shap_show     = r["shap_ar"]     if ar else r["shap_en"]
-    conf          = r["conf"]
+    disease_show = r["disease_ar"] if ar else r["disease_en"]
+    rule_show    = r["rule_ar"]    if ar else r["rule_en"]
+    lime_show    = r["lime_ar"]    if ar else r["lime_en"]
+    shap_show    = r["shap_ar"]    if ar else r["shap_en"]
+    conf         = r["conf"]
 
     rtl = 'class="rtl-text"' if ar else ""
 
     # ── Main result card ──
-    flag = "🇸🇦" if ar else "🇬🇧"
+    flag       = "🇸🇦" if ar else "🇬🇧"
     lang_label = "Arabic" if ar else "English"
 
     st.markdown(f"""
