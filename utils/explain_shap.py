@@ -1,60 +1,45 @@
 # utils/explain_shap.py
-
 import numpy as np
+import shap
 
-def build_shap(model, feature_names):
+def build_shap(model, feature_names, background: np.ndarray = None):
     """
-    Build SHAP-compatible structure.
-    For linear models (LogisticRegression), we DON'T need shap library.
-    We use coefficients directly (fast + stable).
+    Build a KernelExplainer backed by real background data (300, 15209).
+    Falls back to a single zeros row if background is None.
     """
+    feature_names = list(feature_names)
 
-    # Convert to numpy for safe indexing
-    coef = model.coef_              # shape: (n_classes, n_features)
-    intercept = model.intercept_    # shape: (n_classes,)
+    if background is None:
+        background = np.zeros((1, len(feature_names)), dtype=np.float32)
 
-    return {
-        "coef": coef,
-        "intercept": intercept,
-        "feature_names": list(feature_names)
-    }, list(feature_names)
+    explainer = shap.KernelExplainer(
+        model.predict_proba,
+        background,
+        link="identity",
+    )
+    return explainer, feature_names
 
 
-def explain_shap(shap_data, feature_names, vectorizer, text, class_names, top_k=8):
+def explain_shap(explainer, feature_names, vectorizer, processed_text: str, class_names, top_n=10):
     """
-    Generate SHAP-like explanation using linear model weights.
-
-    Returns:
-        list of (word, importance)
+    Returns [(word, shap_value), ...] for the predicted class, sorted by abs importance.
     """
+    feature_names = list(feature_names)
+    x = vectorizer.transform([processed_text]).toarray().astype(np.float32)  # (1, 15209)
 
-    coef = shap_data["coef"]
+    # nsamples controls speed vs accuracy — 100 is a good balance on Streamlit Cloud
+    shap_values = explainer.shap_values(x, nsamples=100)
+    # shap_values: list of (1, 15209) arrays, one per class
 
-    # Transform input text
-    X = vectorizer.transform([text])   # shape: (1, n_features)
-    x_dense = X.toarray()[0]           # convert to dense vector
+    # Pick class with largest total absolute SHAP contribution
+    class_idx = int(np.argmax([np.abs(sv[0]).sum() for sv in shap_values]))
 
-    # Get predicted class
-    # (we recompute here to stay independent)
-    class_idx = np.argmax(np.dot(coef, x_dense))
+    values = shap_values[class_idx][0]  # shape (15209,)
 
-    # Get weights for that class
-    class_weights = coef[class_idx]
-
-    # Element-wise contribution
-    contributions = x_dense * class_weights
-
-    # Get indices of non-zero features only (important!)
-    non_zero_idx = np.where(x_dense > 0)[0]
-
-    # Collect word contributions
-    words = []
-    for idx in non_zero_idx:
-        word = feature_names[idx]
-        weight = contributions[idx]
-        words.append((word, weight))
-
-    # Sort by absolute importance
-    words = sorted(words, key=lambda x: abs(x[1]), reverse=True)
-
-    return words[:top_k]
+    pairs = [
+        (feat, float(val))
+        for feat, val in zip(feature_names, values)
+        if val != 0.0
+    ]
+    pairs.sort(key=lambda t: abs(t[1]), reverse=True)
+    return pairs[:top_n]
