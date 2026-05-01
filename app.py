@@ -275,6 +275,7 @@ if predict_clicked:
 
     # Run LIME explainer
     lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
+    st.write(lime_exp) 
 
     # Translate explanations to Arabic if needed
     def translate_pairs(pairs):
@@ -319,21 +320,17 @@ if st.session_state.result:
 
     # ── Main result card ──
     # ── Main result card ──
-    flag       = "🇸🇦" if ar else "🇬🇧"
-    lang_label = "Arabic" if ar else "English"
-    st.markdown(f"""
-    <div class="card card-accent">
-      <div class="section-header">{flag} Diagnosis — {lang_label}</div>
-      <div class="disease-badge" {rtl}>{disease_show}</div>
-      <div style="margin-top:0.8rem; color:#8b949e; font-size:0.9rem;" {rtl}>
-        {"القاعدة" if ar else "Rule"}: <span style="color:#e6edf3">{rule_show}</span>
-      </div>
-    </div>
-    """, unsafe_allow_html=True)
+# ── Main result card ──
+        flag       = "🇸🇦" if ar else "🇬🇧"
+        lang_label = "Arabic" if ar else "English"
+        st.markdown(f"""
+        <div class="card card-accent">
+          <div class="section-header">{flag} Diagnosis — {lang_label}</div>
+          <div class="disease-badge" {rtl}>{disease_show}</div>
+        </div>
+        """, unsafe_allow_html=True)
     
-    st.markdown(f'<div class="conf-label">{"الثقة" if ar else "Confidence"}</div>', unsafe_allow_html=True)
-    st.progress(conf, text=f"{conf*100:.1f}%")
-
+        st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
     # ── Explanation card ──
     def render_explain_card(title, color_class, pairs, is_ar):
         rtl_attr  = 'class="rtl-text"' if is_ar else ""
