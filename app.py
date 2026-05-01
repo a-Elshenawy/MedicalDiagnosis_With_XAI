@@ -197,6 +197,11 @@ label_map     = data["label_map"]
 class_names   = data["class_names"]
 feature_names = data["feature_names"]
 
+# v3 fix: if label_map maps labels to themselves (numbers),
+# rebuild it from class_names which contain the actual disease strings
+if all(str(k) == str(v) for k, v in label_map.items()):
+    label_map = {cn: cn for cn in class_names}
+
 # =========================
 # EXPLAINERS
 # =========================
