@@ -223,8 +223,8 @@ if "init_logged" not in st.session_state:
 # =========================
 @st.cache_resource
 def load_model(file_id, path):
+    os.makedirs(MODELS_DIR, exist_ok=True)
     if not os.path.exists(path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
         url = f"https://drive.google.com/uc?id={file_id}"
         gdown.download(url, path, quiet=True)
     with open(path, "rb") as f:
@@ -233,16 +233,20 @@ def load_model(file_id, path):
 MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
 MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
 
+# Absolute base so all file ops work identically on Streamlit Cloud and locally
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+MODELS_DIR = os.path.join(BASE_DIR, "models")
+
 # =========================
 # SHAP BACKGROUND LOADER
 # =========================
-SHAP_BG_PATH      = "shap_background_only.pkl"
-SHAP_BG_GDRIVE_ID = "1b4OLk4pXBddNhHOpgHlTOJvFs0xcSIf7"   # ← replace with your Drive file ID
+SHAP_BG_PATH      = os.path.join(MODELS_DIR, "shap_background_only.pkl")
+SHAP_BG_GDRIVE_ID = "YOUR_GDRIVE_FILE_ID_HERE"   # ← replace with your Drive file ID
 
 @st.cache_resource
 def load_shap_background(path, file_id):
+    os.makedirs(MODELS_DIR, exist_ok=True)
     if not os.path.exists(path):
-        os.makedirs(os.path.dirname(path), exist_ok=True)
         url = f"https://drive.google.com/uc?id={file_id}"
         gdown.download(url, path, quiet=True)
         logging.info("Downloaded SHAP background from Drive")
@@ -287,9 +291,9 @@ with st.sidebar:
 # LOAD MODEL
 # =========================
 if version == "v1":
-    data = load_model(MODEL_V1_ID, "models/model-v1.pkl")
+    data = load_model(MODEL_V1_ID, os.path.join(MODELS_DIR, "model-v1.pkl"))
 else:
-    data = load_model(MODEL_V2_ID, "models/model-v2.pkl")
+    data = load_model(MODEL_V2_ID, os.path.join(MODELS_DIR, "model-v2.pkl"))
 
 model         = data["model"]
 vectorizer    = data["vectorizer"]
