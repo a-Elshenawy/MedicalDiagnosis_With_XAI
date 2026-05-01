@@ -241,7 +241,7 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 # SHAP BACKGROUND LOADER
 # =========================
 SHAP_BG_PATH      = os.path.join(MODELS_DIR, "shap_background_only.pkl")
-SHAP_BG_GDRIVE_ID = "YOUR_GDRIVE_FILE_ID_HERE"   # ← replace with your Drive file ID
+SHAP_BG_GDRIVE_ID = "1b4OLk4pXBddNhHOpgHlTOJvFs0xcSIf7"   # ← replace with your Drive file ID
 
 @st.cache_resource
 def load_shap_background(path, file_id):
