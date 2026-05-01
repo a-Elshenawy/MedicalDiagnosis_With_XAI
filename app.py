@@ -4,7 +4,6 @@ import pickle
 import os
 import gdown
 import logging
-
 from utils.preprocess import basic_clean
 from utils.translate import is_arabic, to_english, to_arabic
 from utils.explain_lime import build_lime, explain_lime
@@ -28,111 +27,103 @@ st.markdown("""
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
 
 /* ── Global ── */
-html, body, [class*="css"] {
-    font-family: 'Sora', sans-serif;
-}
+html, body, [class*="css"] { font-family: 'Sora', sans-serif; }
 
 /* ── Background ── */
 .stApp {
-    background: linear-gradient(135deg, #0d1117 0%, #0f1923 50%, #0d1117 100%);
-    color: #e6edf3;
+  background: linear-gradient(135deg, #0d1117 0%, #0f1923 50%, #0d1117 100%);
+  color: #e6edf3;
 }
 
 /* ── Sidebar ── */
-[data-testid="stSidebar"] {
-    background: #161b22;
-    border-right: 1px solid #21262d;
-}
+[data-testid="stSidebar"] { background: #161b22; border-right: 1px solid #21262d; }
 [data-testid="stSidebar"] .stSelectbox label,
 [data-testid="stSidebar"] p,
-[data-testid="stSidebar"] .stButton button {
-    color: #8b949e !important;
-}
+[data-testid="stSidebar"] .stButton button { color: #8b949e !important; }
 
 /* ── Cards ── */
-.card {
-    background: #161b22;
-    border: 1px solid #21262d;
-    border-radius: 12px;
-    padding: 1.4rem 1.6rem;
-    margin-bottom: 1.2rem;
-}
-.card-accent { border-left: 4px solid #58a6ff; }
-.card-green { border-left: 4px solid #3fb950; }
-.card-purple { border-left: 4px solid #bc8cff; }
-.card-orange { border-left: 4px solid #f0883e; }
+.card { background: #161b22; border: 1px solid #21262d; border-radius: 12px; padding: 1.4rem 1.6rem; margin-bottom: 1.2rem; }
+.card-accent  { border-left: 4px solid #58a6ff; }
+.card-green   { border-left: 4px solid #3fb950; }
+.card-purple  { border-left: 4px solid #bc8cff; }
+.card-orange  { border-left: 4px solid #f0883e; }
 
 /* ── Title ── */
-.hero-title {
-    font-size: 2.4rem;
-    font-weight: 700;
-    color: #e6edf3;
-    letter-spacing: -0.03em;
-    margin-bottom: 0.2rem;
-}
-.hero-sub {
-    color: #8b949e;
-    font-size: 0.95rem;
-    margin-bottom: 2rem;
-    font-weight: 300;
-}
+.hero-title { font-size: 2.4rem; font-weight: 700; color: #e6edf3; letter-spacing: -0.03em; margin-bottom: 0.2rem; }
+.hero-sub   { color: #8b949e; font-size: 0.95rem; margin-bottom: 2rem; font-weight: 300; }
 
 /* ── Disease badge ── */
 .disease-badge {
-    display: inline-block;
-    background: linear-gradient(90deg, #1f6feb, #388bfd);
-    color: #fff;
-    font-size: 1.4rem;
-    font-weight: 700;
-    padding: 0.5rem 1.2rem;
-    border-radius: 8px;
+  display: inline-block;
+  background: linear-gradient(90deg, #1f6feb, #388bfd);
+  color: #fff; font-size: 1.4rem; font-weight: 700;
+  padding: 0.5rem 1.2rem; border-radius: 8px;
+  letter-spacing: 0.01em; margin-bottom: 0.6rem;
 }
+
+/* ── Confidence bar ── */
+.conf-label { font-size: 0.85rem; color: #8b949e; margin-bottom: 2px; }
 
 /* ── Explain rows ── */
 .explain-row {
-    display: flex;
-    justify-content: space-between;
-    padding: 0.35rem 0;
-    border-bottom: 1px solid #21262d;
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 0.88rem;
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.35rem 0; border-bottom: 1px solid #21262d;
+  font-family: 'IBM Plex Mono', monospace; font-size: 0.88rem;
 }
+.explain-row:last-child { border-bottom: none; }
 .word-label { color: #e6edf3; }
 .val-pos { color: #3fb950; font-weight: 600; }
 .val-neg { color: #f85149; font-weight: 600; }
 
-/* ── Buttons ── */
+/* ── Example buttons ── */
 .stButton > button {
-    background: #21262d !important;
-    color: #c9d1d9 !important;
-    border: 1px solid #30363d !important;
-    border-radius: 8px !important;
+  background: #21262d !important; color: #c9d1d9 !important;
+  border: 1px solid #30363d !important; border-radius: 8px !important;
+  font-family: 'Sora', sans-serif !important; font-size: 0.82rem !important;
+  padding: 0.4rem 0.8rem !important; transition: all 0.2s !important;
 }
+.stButton > button:hover { background: #1f6feb !important; border-color: #388bfd !important; color: #fff !important; }
 
 /* ── Predict button ── */
 .predict-btn > button {
-    background: linear-gradient(90deg, #1f6feb, #388bfd) !important;
-    color: #fff !important;
-    font-weight: 600 !important;
+  background: linear-gradient(90deg, #1f6feb, #388bfd) !important;
+  color: #fff !important; font-size: 1rem !important; font-weight: 600 !important;
+  border: none !important; border-radius: 10px !important;
+  padding: 0.65rem 2.5rem !important; letter-spacing: 0.02em !important;
 }
+.predict-btn > button:hover { background: linear-gradient(90deg, #388bfd, #58a6ff) !important; }
+
+/* ── Translate button ── */
+.translate-btn > button {
+  background: #21262d !important; border: 1px solid #388bfd !important;
+  color: #58a6ff !important; font-size: 0.88rem !important; border-radius: 8px !important;
+}
+.translate-btn > button:hover { background: #1f6feb22 !important; }
 
 /* ── Text area ── */
 .stTextArea textarea {
-    background: #0d1117 !important;
-    border: 1px solid #30363d !important;
-    color: #e6edf3 !important;
+  background: #0d1117 !important; border: 1px solid #30363d !important;
+  border-radius: 10px !important; color: #e6edf3 !important;
+  font-family: 'Sora', sans-serif !important; font-size: 1rem !important;
+}
+.stTextArea textarea:focus { border-color: #388bfd !important; box-shadow: 0 0 0 3px #1f6feb33 !important; }
+
+/* ── RTL support ── */
+.rtl-text { direction: rtl; text-align: right; font-size: 1.05rem; }
+
+/* ── Section headers ── */
+.section-header {
+  font-size: 0.78rem; font-weight: 600; letter-spacing: 0.1em;
+  text-transform: uppercase; color: #8b949e; margin-bottom: 0.8rem;
 }
 
-/* ── RTL ── */
-.rtl-text {
-    direction: rtl;
-    text-align: right;
-}
+/* ── Divider ── */
+hr.subtle { border: none; border-top: 1px solid #21262d; margin: 1.2rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
 # =========================
-# LOGGING
+# LOGGING SETUP
 # =========================
 os.makedirs("logs", exist_ok=True)
 logging.basicConfig(
@@ -140,7 +131,6 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(levelname)s - %(message)s"
 )
-
 if "init_logged" not in st.session_state:
     logging.info("Session started")
     st.session_state.init_logged = True
@@ -148,9 +138,6 @@ if "init_logged" not in st.session_state:
 # =========================
 # MODEL LOADER
 # =========================
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODELS_DIR = os.path.join(BASE_DIR, "models")
-
 @st.cache_resource
 def load_model(file_id, path):
     os.makedirs(MODELS_DIR, exist_ok=True)
@@ -163,12 +150,9 @@ def load_model(file_id, path):
 MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
 MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
 
-# =========================
-# LIME
-# =========================
-@st.cache_resource
-def get_lime(_class_names):
-    return build_lime(_class_names)
+# Absolute base so all file ops work identically on Streamlit Cloud and locally
+BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
+MODELS_DIR = os.path.join(BASE_DIR, "models")
 
 # =========================
 # SIDEBAR
@@ -176,23 +160,27 @@ def get_lime(_class_names):
 with st.sidebar:
     st.markdown("### ⚙️ Model Control")
     version = st.selectbox("Model Version", ["v1", "v2"])
+    if "last_version" not in st.session_state:
+        st.session_state.last_version = version
+    if version != st.session_state.last_version:
+        logging.info(f"Switched model to {version}")
+        st.session_state.last_version = version
 
     st.markdown("---")
     st.markdown("### 🔍 Explainer")
     explainer_choice = st.radio("Method", ["LIME"], index=0)
 
     st.markdown("---")
-
     if "show_logs" not in st.session_state:
         st.session_state.show_logs = False
-
     if st.button("📋 Toggle Logs"):
         st.session_state.show_logs = not st.session_state.show_logs
-
     if st.session_state.show_logs:
         try:
             with open("logs/app.log", "r") as f:
-                st.text_area("Logs", f.read(), height=260)
+                log_data = f.read()
+            st.text_area("Logs", log_data, height=260)
+            st.download_button("⬇️ Download Logs", log_data, file_name="app.log")
         except FileNotFoundError:
             st.info("No logs yet.")
 
@@ -204,10 +192,18 @@ if version == "v1":
 else:
     data = load_model(MODEL_V2_ID, os.path.join(MODELS_DIR, "model-v2.pkl"))
 
-model         = data["model"]
-vectorizer    = data["vectorizer"]
-label_map     = data["label_map"]
-class_names   = data["class_names"]
+model        = data["model"]
+vectorizer   = data["vectorizer"]
+label_map    = data["label_map"]
+class_names  = data["class_names"]
+feature_names = data["feature_names"]  # from pickle — matches model exactly
+
+# =========================
+# EXPLAINERS
+# =========================
+@st.cache_resource
+def get_lime(_class_names):
+    return build_lime(_class_names)
 
 lime_explainer = get_lime(class_names)
 
@@ -215,7 +211,7 @@ lime_explainer = get_lime(class_names)
 # HERO
 # =========================
 st.markdown('<div class="hero-title">🩺 Disease Prediction AI</div>', unsafe_allow_html=True)
-st.markdown('<div class="hero-sub">Arabic & English · LIME Explainability</div>', unsafe_allow_html=True)
+st.markdown('<div class="hero-sub">Arabic & English · LIME Explainability · Bilingual Output</div>', unsafe_allow_html=True)
 
 # =========================
 # SESSION STATE
@@ -228,47 +224,73 @@ if "display_arabic" not in st.session_state:
     st.session_state.display_arabic = None
 
 # =========================
+# EXAMPLES
+# =========================
+st.markdown('<div class="section-header">💡 Quick Examples</div>', unsafe_allow_html=True)
+examples = ["fever headache", "sore throat cough", "ألم في الرأس", "stomach pain vomiting"]
+cols = st.columns(len(examples))
+for i, ex in enumerate(examples):
+    if cols[i].button(ex, key=f"ex_{i}"):
+        st.session_state.symptom_input = ex
+        logging.info(f"Example used: {ex}")
+        st.rerun()
+
+# =========================
 # INPUT
 # =========================
 user_input = st.text_area(
     "Enter symptoms (Arabic or English):",
     value=st.session_state.symptom_input,
-    height=110
+    placeholder="e.g. fever, headache, cough | حمى، صداع، سعال",
+    height=110,
+    key="symptom_input"
 )
 
-predict_clicked = st.button("🔍 Predict")
+col_pred, _ = st.columns([1, 4])
+with col_pred:
+    st.markdown('<div class="predict-btn">', unsafe_allow_html=True)
+    predict_clicked = st.button("🔍 Predict", use_container_width=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # =========================
 # PREDICT
 # =========================
 if predict_clicked:
     if not user_input.strip():
-        st.warning("⚠️ Please enter symptoms.")
+        st.warning("⚠️ Please enter at least one symptom.")
+        logging.warning("Empty input submitted")
         st.stop()
 
+    logging.info(f"Input: {user_input}")
     arabic_input = is_arabic(user_input)
-    processed = to_english(user_input) if arabic_input else user_input
-    processed = basic_clean(processed)
+    processed    = to_english(user_input) if arabic_input else user_input
+    processed    = basic_clean(processed)
 
-    X = vectorizer.transform([processed])
-    pred = model.predict(X)[0]
+    X     = vectorizer.transform([processed])
+    pred  = model.predict(X)[0]
     probs = model.predict_proba(X)[0]
-    conf = float(np.max(probs))
+    conf  = float(np.max(probs))
 
-    disease = label_map.get(pred, str(pred))
+    disease  = label_map.get(pred, str(pred))
     rule_msg = apply_rules(conf)
+    logging.info(f"Prediction: {disease} | Confidence: {conf:.2f}")
 
+    # Run LIME explainer
     lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
+
+    # Translate explanations to Arabic if needed
+    def translate_pairs(pairs):
+        return [(to_arabic(w), v) for w, v in pairs]
 
     st.session_state.result = {
         "arabic_input": arabic_input,
-        "disease_en": disease,
-        "disease_ar": to_arabic(disease),
-        "conf": conf,
-        "rule_en": rule_msg,
-        "rule_ar": to_arabic(rule_msg),
-        "lime_en": lime_exp,
-        "lime_ar": [(to_arabic(w), v) for w, v in lime_exp],
+        "disease_en":   disease,
+        "disease_ar":   to_arabic(disease),
+        "conf":         conf,
+        "rule_en":      rule_msg,
+        "rule_ar":      to_arabic(rule_msg),
+        "lime_en":      lime_exp,
+        "lime_ar":      translate_pairs(lime_exp),
     }
     st.session_state.display_arabic = arabic_input
 
@@ -276,35 +298,63 @@ if predict_clicked:
 # RESULTS
 # =========================
 if st.session_state.result:
-    r = st.session_state.result
+    r  = st.session_state.result
     ar = st.session_state.display_arabic
 
-    disease_show = r["disease_ar"] if ar else r["disease_en"]
-    rule_show = r["rule_ar"] if ar else r["rule_en"]
-    lime_show = r["lime_ar"] if ar else r["lime_en"]
-    conf = r["conf"]
+    # ── Translate toggle ──
+    st.markdown("<hr class='subtle'>", unsafe_allow_html=True)
+    col_toggle, _ = st.columns([1, 4])
+    with col_toggle:
+        toggle_label = "🌐 عرض بالعربية" if not ar else "🌐 Show in English"
+        st.markdown('<div class="translate-btn">', unsafe_allow_html=True)
+        if st.button(toggle_label, key="lang_toggle"):
+            st.session_state.display_arabic = not ar
+            st.rerun()
+        st.markdown('</div>', unsafe_allow_html=True)
 
+    # ── Resolve display values ──
+    disease_show = r["disease_ar"] if ar else r["disease_en"]
+    rule_show    = r["rule_ar"]    if ar else r["rule_en"]
+    lime_show    = r["lime_ar"]    if ar else r["lime_en"]
+    conf         = r["conf"]
+    rtl          = 'class="rtl-text"' if ar else ""
+
+    # ── Main result card ──
+    flag       = "🇸🇦" if ar else "🇬🇧"
+    lang_label = "Arabic" if ar else "English"
     st.markdown(f"""
     <div class="card card-accent">
-        <div class="disease-badge">{disease_show}</div>
-        <div>Confidence: {conf:.2f}</div>
-        <div>{rule_show}</div>
-    </div>
+      <div class="section-header">{flag} Diagnosis — {lang_label}</div>
+      <div class="disease-badge" {rtl}>{disease_show}</div>
+      <div class="conf-label">{"الثقة" if ar else "Confidence"}</div>
     """, unsafe_allow_html=True)
-
-    rows = ""
-    for w, v in lime_show:
-        cls = "val-pos" if v >= 0 else "val-neg"
-        rows += f"""
-        <div class="explain-row">
-            <span>{w}</span>
-            <span class="{cls}">{v:.4f}</span>
-        </div>
-        """
-
+    st.progress(conf, text=f"{conf*100:.1f}%")
     st.markdown(f"""
-    <div class="card card-green">
-        <div>LIME Explanation</div>
-        {rows}
+      <div style="margin-top:0.8rem; color:#8b949e; font-size:0.9rem;" {rtl}>
+        {"القاعدة" if ar else "Rule"}: <span style="color:#e6edf3">{rule_show}</span>
+      </div>
     </div>
     """, unsafe_allow_html=True)
+
+    # ── Explanation card ──
+    def render_explain_card(title, color_class, pairs, is_ar):
+        rtl_attr  = 'class="rtl-text"' if is_ar else ""
+        rows_html = ""
+        for word, val in pairs:
+            val_class = "val-pos" if val >= 0 else "val-neg"
+            sign      = "+" if val >= 0 else ""
+            rows_html += f"""
+            <div class="explain-row">
+              <span class="word-label" {rtl_attr}>{word}</span>
+              <span class="{val_class}">{sign}{val:.4f}</span>
+            </div>"""
+        if not rows_html:
+            rows_html = f'<div style="color:#8b949e;font-size:0.85rem">{"لا توجد بيانات" if is_ar else "No data"}</div>'
+        return f"""
+        <div class="card {color_class}">
+          <div class="section-header">{title}</div>
+          {rows_html}
+        </div>"""
+
+    lime_title = "🧠 شرح LIME" if ar else "🧠 LIME Explanation"
+    st.markdown(render_explain_card(lime_title, "card-green", lime_show, ar), unsafe_allow_html=True)
