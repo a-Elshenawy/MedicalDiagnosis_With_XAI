@@ -321,16 +321,16 @@ if st.session_state.result:
     # ── Main result card ──
     # ── Main result card ──
 # ── Main result card ──
-        flag       = "🇸🇦" if ar else "🇬🇧"
-        lang_label = "Arabic" if ar else "English"
-        st.markdown(f"""
-        <div class="card card-accent">
-          <div class="section-header">{flag} Diagnosis — {lang_label}</div>
-          <div class="disease-badge" {rtl}>{disease_show}</div>
-        </div>
-        """, unsafe_allow_html=True)
+    flag       = "🇸🇦" if ar else "🇬🇧"
+    lang_label = "Arabic" if ar else "English"
+    st.markdown(f"""
+    <div class="card card-accent">
+        <div class="section-header">{flag} Diagnosis — {lang_label}</div>
+        <div class="disease-badge" {rtl}>{disease_show}</div>
+    </div>
+    """, unsafe_allow_html=True)
     
-        st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
+    st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
     # ── Explanation card ──
     def render_explain_card(title, color_class, pairs, is_ar):
         rtl_attr  = 'class="rtl-text"' if is_ar else ""
