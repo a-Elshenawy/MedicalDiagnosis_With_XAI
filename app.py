@@ -331,43 +331,19 @@ if st.session_state.result:
     """, unsafe_allow_html=True)
     
     st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
-# ── LIME Explanation card ──
+# ── LIME Explanation ──
     lime_title = "🧠 شرح LIME" if ar else "🧠 LIME Explanation"
-    
-    rows_html = ""
+    st.markdown(f"**{lime_title}**")
+    st.markdown("---")
+
     if lime_show:
         for word, val in lime_show:
             val_color = "#3fb950" if val >= 0 else "#f85149"
             sign      = "+" if val >= 0 else ""
-            rows_html += f"""
-            <div style="
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 0.35rem 0.2rem;
-                border-bottom: 1px solid #21262d;
-                font-family: 'IBM Plex Mono', monospace;
-                font-size: 0.88rem;
-                direction: {'rtl' if ar else 'ltr'};
-            ">
-                <span style="color:#e6edf3;">{word}</span>
-                <span style="color:{val_color}; font-weight:600;">{sign}{val:.4f}</span>
-            </div>"""
+            col1, col2 = st.columns([3, 1])
+            with col1:
+                st.markdown(f"<span style='color:#e6edf3;font-family:monospace'>{word}</span>", unsafe_allow_html=True)
+            with col2:
+                st.markdown(f"<span style='color:{val_color};font-weight:600;font-family:monospace'>{sign}{val:.4f}</span>", unsafe_allow_html=True)
     else:
-        rows_html = f'<div style="color:#8b949e;font-size:0.85rem">{"لا توجد بيانات" if ar else "No data"}</div>'
-
-    st.markdown(f"""
-    <div style="
-        background:#161b22;
-        border:1px solid #21262d;
-        border-left: 4px solid #3fb950;
-        border-radius:12px;
-        padding:1.4rem 1.6rem;
-        margin-bottom:1.2rem;
-    ">
-        <div style="font-size:0.78rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#8b949e;margin-bottom:0.8rem;">
-            {lime_title}
-        </div>
-        {rows_html}
-    </div>
-    """, unsafe_allow_html=True)
+        st.markdown(f"<span style='color:#8b949e;font-size:0.85rem'>{'لا توجد بيانات' if ar else 'No data'}</span>", unsafe_allow_html=True)
