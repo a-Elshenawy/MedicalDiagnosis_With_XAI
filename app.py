@@ -304,6 +304,13 @@ if predict_clicked:
         "label_map_key_type_after_fix": str(type(list(label_map.keys())[0])),
         "disease_resolved": disease,
     })
+    st.write({
+        "pred": pred,
+        "exists_in_map": pred in label_map,
+        "max_key": max(label_map.keys()),
+        "min_key": min(label_map.keys()),
+        "num_keys": len(label_map)
+    })
 # =========================
 # RESULTS
 # =========================
