@@ -4,13 +4,13 @@ import pickle
 import os
 import gdown
 import logging
- 
+
 from utils.preprocess import basic_clean
 from utils.translate import is_arabic, to_english, to_arabic
 from utils.explain_lime import build_lime, explain_lime
 from utils.explain_shap import build_shap, explain_shap
 from utils.rules import apply_rules
- 
+
 # =========================
 # PAGE CONFIG
 # =========================
@@ -20,25 +20,25 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
- 
+
 # =========================
 # CUSTOM CSS
 # =========================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
- 
+
 /* ── Global ── */
 html, body, [class*="css"] {
     font-family: 'Sora', sans-serif;
 }
- 
+
 /* ── Background ── */
 .stApp {
     background: linear-gradient(135deg, #0d1117 0%, #0f1923 50%, #0d1117 100%);
     color: #e6edf3;
 }
- 
+
 /* ── Sidebar ── */
 [data-testid="stSidebar"] {
     background: #161b22;
@@ -49,7 +49,7 @@ html, body, [class*="css"] {
 [data-testid="stSidebar"] .stButton button {
     color: #8b949e !important;
 }
- 
+
 /* ── Cards ── */
 .card {
     background: #161b22;
@@ -70,7 +70,7 @@ html, body, [class*="css"] {
 .card-orange {
     border-left: 4px solid #f0883e;
 }
- 
+
 /* ── Title ── */
 .hero-title {
     font-size: 2.4rem;
@@ -85,7 +85,7 @@ html, body, [class*="css"] {
     margin-bottom: 2rem;
     font-weight: 300;
 }
- 
+
 /* ── Disease badge ── */
 .disease-badge {
     display: inline-block;
@@ -98,14 +98,14 @@ html, body, [class*="css"] {
     letter-spacing: 0.01em;
     margin-bottom: 0.6rem;
 }
- 
+
 /* ── Confidence bar ── */
 .conf-label {
     font-size: 0.85rem;
     color: #8b949e;
     margin-bottom: 2px;
 }
- 
+
 /* ── Explain rows ── */
 .explain-row {
     display: flex;
@@ -120,7 +120,7 @@ html, body, [class*="css"] {
 .word-label { color: #e6edf3; }
 .val-pos { color: #3fb950; font-weight: 600; }
 .val-neg { color: #f85149; font-weight: 600; }
- 
+
 /* ── Example buttons ── */
 .stButton > button {
     background: #21262d !important;
@@ -137,7 +137,7 @@ html, body, [class*="css"] {
     border-color: #388bfd !important;
     color: #fff !important;
 }
- 
+
 /* ── Predict button ── */
 .predict-btn > button {
     background: linear-gradient(90deg, #1f6feb, #388bfd) !important;
@@ -152,7 +152,7 @@ html, body, [class*="css"] {
 .predict-btn > button:hover {
     background: linear-gradient(90deg, #388bfd, #58a6ff) !important;
 }
- 
+
 /* ── Translate button ── */
 .translate-btn > button {
     background: #21262d !important;
@@ -164,7 +164,7 @@ html, body, [class*="css"] {
 .translate-btn > button:hover {
     background: #1f6feb22 !important;
 }
- 
+
 /* ── Text area ── */
 .stTextArea textarea {
     background: #0d1117 !important;
@@ -178,14 +178,14 @@ html, body, [class*="css"] {
     border-color: #388bfd !important;
     box-shadow: 0 0 0 3px #1f6feb33 !important;
 }
- 
+
 /* ── RTL support ── */
 .rtl-text {
     direction: rtl;
     text-align: right;
     font-size: 1.05rem;
 }
- 
+
 /* ── Section headers ── */
 .section-header {
     font-size: 0.78rem;
@@ -195,7 +195,7 @@ html, body, [class*="css"] {
     color: #8b949e;
     margin-bottom: 0.8rem;
 }
- 
+
 /* ── Divider ── */
 hr.subtle {
     border: none;
@@ -204,7 +204,7 @@ hr.subtle {
 }
 </style>
 """, unsafe_allow_html=True)
- 
+
 # =========================
 # LOGGING SETUP
 # =========================
@@ -217,38 +217,39 @@ logging.basicConfig(
 if "init_logged" not in st.session_state:
     logging.info("Session started")
     st.session_state.init_logged = True
- 
+
 # =========================
 # MODEL LOADER
 # =========================
 @st.cache_resource
 def load_model(file_id, path):
     if not os.path.exists(path):
+        os.makedirs(os.path.dirname(path), exist_ok=True)  # create models/ if missing
         url = f"https://drive.google.com/uc?id={file_id}"
         gdown.download(url, path, quiet=True)
     with open(path, "rb") as f:
         return pickle.load(f)
- 
+
 MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
 MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
- 
+
 # =========================
 # SIDEBAR
 # =========================
 with st.sidebar:
     st.markdown("### ⚙️ Model Control")
     version = st.selectbox("Model Version", ["v1", "v2"])
- 
+
     if "last_version" not in st.session_state:
         st.session_state.last_version = version
     if version != st.session_state.last_version:
         logging.info(f"Switched model to {version}")
         st.session_state.last_version = version
- 
+
     st.markdown("---")
     st.markdown("### 🔍 Explainer")
     explainer_choice = st.radio("Method", ["LIME", "SHAP", "Both"], index=2)
- 
+
     st.markdown("---")
     if "show_logs" not in st.session_state:
         st.session_state.show_logs = False
@@ -262,7 +263,7 @@ with st.sidebar:
             st.download_button("⬇️ Download Logs", log_data, file_name="app.log")
         except FileNotFoundError:
             st.info("No logs yet.")
- 
+
 # =========================
 # LOAD MODEL
 # =========================
@@ -270,32 +271,32 @@ if version == "v1":
     data = load_model(MODEL_V1_ID, "models/model-v1.pkl")
 else:
     data = load_model(MODEL_V2_ID, "models/model-v2.pkl")
- 
+
 model      = data["model"]
 vectorizer = data["vectorizer"]
 label_map  = data["label_map"]
 class_names = data["class_names"]
- 
+
 # =========================
 # EXPLAINERS
 # =========================
 @st.cache_resource
 def get_lime(_class_names):
     return build_lime(_class_names)
- 
+
 @st.cache_resource
 def get_shap(_model, _vectorizer, _class_names):
     return build_shap(_model, _vectorizer, _class_names)
- 
+
 lime_explainer = get_lime(class_names)
 shap_explainer, shap_feature_names = get_shap(model, vectorizer, class_names)
- 
+
 # =========================
 # HERO
 # =========================
 st.markdown('<div class="hero-title">🩺 Disease Prediction AI</div>', unsafe_allow_html=True)
 st.markdown('<div class="hero-sub">Arabic & English · LIME & SHAP Explainability · Bilingual Output</div>', unsafe_allow_html=True)
- 
+
 # =========================
 # SESSION STATE
 # =========================
@@ -305,7 +306,7 @@ if "result" not in st.session_state:
     st.session_state.result = None
 if "display_arabic" not in st.session_state:
     st.session_state.display_arabic = None  # will be set on predict
- 
+
 # =========================
 # EXAMPLES
 # =========================
@@ -317,7 +318,7 @@ for i, ex in enumerate(examples):
         st.session_state.symptom_input = ex
         logging.info(f"Example used: {ex}")
         st.rerun()
- 
+
 # =========================
 # INPUT
 # =========================
@@ -328,13 +329,13 @@ user_input = st.text_area(
     height=110,
     key="symptom_input"
 )
- 
+
 col_pred, _ = st.columns([1, 4])
 with col_pred:
     st.markdown('<div class="predict-btn">', unsafe_allow_html=True)
     predict_clicked = st.button("🔍 Predict", use_container_width=True)
     st.markdown('</div>', unsafe_allow_html=True)
- 
+
 # =========================
 # PREDICT
 # =========================
@@ -343,34 +344,34 @@ if predict_clicked:
         st.warning("⚠️ Please enter at least one symptom.")
         logging.warning("Empty input submitted")
         st.stop()
- 
+
     logging.info(f"Input: {user_input}")
- 
+
     arabic_input = is_arabic(user_input)
     processed    = to_english(user_input) if arabic_input else user_input
     processed    = basic_clean(processed)
- 
+
     X     = vectorizer.transform([processed])
     pred  = model.predict(X)[0]
     probs = model.predict_proba(X)[0]
     conf  = float(np.max(probs))
- 
+
     disease  = label_map.get(pred, str(pred))
     rule_msg = apply_rules(conf)
- 
+
     logging.info(f"Prediction: {disease} | Confidence: {conf:.2f}")
- 
+
     # Run explainers
     lime_exp = explain_lime(lime_explainer, model, vectorizer, processed) \
         if explainer_choice in ("LIME", "Both") else []
     shap_exp = explain_shap(shap_explainer, shap_feature_names, vectorizer,
                             processed, class_names) \
         if explainer_choice in ("SHAP", "Both") else []
- 
+
     # Translate explanations to Arabic if needed
     def translate_pairs(pairs):
         return [(to_arabic(w), v) for w, v in pairs]
- 
+
     st.session_state.result = {
         "arabic_input": arabic_input,
         "disease_en": disease,
@@ -385,14 +386,14 @@ if predict_clicked:
     }
     # Default display language matches input language
     st.session_state.display_arabic = arabic_input
- 
+
 # =========================
 # RESULTS
 # =========================
 if st.session_state.result:
     r  = st.session_state.result
     ar = st.session_state.display_arabic
- 
+
     # ── Translate toggle ──
     st.markdown("<hr class='subtle'>", unsafe_allow_html=True)
     col_toggle, _ = st.columns([1, 4])
@@ -403,39 +404,39 @@ if st.session_state.result:
             st.session_state.display_arabic = not ar
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
- 
+
     # ── Resolve display values ──
     disease_show  = r["disease_ar"]  if ar else r["disease_en"]
     rule_show     = r["rule_ar"]     if ar else r["rule_en"]
     lime_show     = r["lime_ar"]     if ar else r["lime_en"]
     shap_show     = r["shap_ar"]     if ar else r["shap_en"]
     conf          = r["conf"]
- 
+
     rtl = 'class="rtl-text"' if ar else ""
- 
+
     # ── Main result card ──
     flag = "🇸🇦" if ar else "🇬🇧"
     lang_label = "Arabic" if ar else "English"
- 
+
     st.markdown(f"""
     <div class="card card-accent">
         <div class="section-header">{flag} Diagnosis — {lang_label}</div>
         <div class="disease-badge" {rtl}>{disease_show}</div>
         <div class="conf-label">{"الثقة" if ar else "Confidence"}</div>
     """, unsafe_allow_html=True)
- 
+
     st.progress(conf, text=f"{conf*100:.1f}%")
- 
+
     st.markdown(f"""
         <div style="margin-top:0.8rem; color:#8b949e; font-size:0.9rem;" {rtl}>
             {"القاعدة" if ar else "Rule"}: <span style="color:#e6edf3">{rule_show}</span>
         </div>
     </div>
     """, unsafe_allow_html=True)
- 
+
     # ── Explanation columns ──
     left_col, right_col = st.columns(2)
- 
+
     def render_explain_card(title, color_class, pairs, is_ar):
         rtl_attr = 'class="rtl-text"' if is_ar else ""
         rows_html = ""
@@ -454,13 +455,13 @@ if st.session_state.result:
             <div class="section-header">{title}</div>
             {rows_html}
         </div>"""
- 
+
     if explainer_choice in ("LIME", "Both"):
         lime_title = "🧠 شرح LIME" if ar else "🧠 LIME Explanation"
         with left_col:
             st.markdown(render_explain_card(lime_title, "card-green", lime_show, ar),
                         unsafe_allow_html=True)
- 
+
     if explainer_choice in ("SHAP", "Both"):
         shap_title = "⚡ شرح SHAP" if ar else "⚡ SHAP Explanation"
         target_col = right_col if explainer_choice == "Both" else left_col
