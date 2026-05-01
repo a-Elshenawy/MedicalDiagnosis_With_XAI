@@ -275,7 +275,7 @@ if predict_clicked:
 
     # Run LIME explainer
     lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
-    st.write(lime_exp) 
+
 
     # Translate explanations to Arabic if needed
     def translate_pairs(pairs):
@@ -333,18 +333,13 @@ if st.session_state.result:
     st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
 # ── LIME Explanation card ──
     lime_title = "🧠 شرح LIME" if ar else "🧠 LIME Explanation"
-    st.markdown(f"""
-    <div class="card card-green">
-      <div class="section-header">{lime_title}</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+    
+    rows_html = ""
     if lime_show:
         for word, val in lime_show:
             val_color = "#3fb950" if val >= 0 else "#f85149"
             sign      = "+" if val >= 0 else ""
-            align     = "right" if ar else "left"
-            st.markdown(f"""
+            rows_html += f"""
             <div style="
                 display: flex;
                 justify-content: space-between;
@@ -355,9 +350,24 @@ if st.session_state.result:
                 font-size: 0.88rem;
                 direction: {'rtl' if ar else 'ltr'};
             ">
-                <span style="color:#e6edf3; text-align:{align}">{word}</span>
+                <span style="color:#e6edf3;">{word}</span>
                 <span style="color:{val_color}; font-weight:600;">{sign}{val:.4f}</span>
-            </div>
-            """, unsafe_allow_html=True)
+            </div>"""
     else:
-        st.markdown(f'<div style="color:#8b949e;font-size:0.85rem">{"لا توجد بيانات" if ar else "No data"}</div>', unsafe_allow_html=True)
+        rows_html = f'<div style="color:#8b949e;font-size:0.85rem">{"لا توجد بيانات" if ar else "No data"}</div>'
+
+    st.markdown(f"""
+    <div style="
+        background:#161b22;
+        border:1px solid #21262d;
+        border-left: 4px solid #3fb950;
+        border-radius:12px;
+        padding:1.4rem 1.6rem;
+        margin-bottom:1.2rem;
+    ">
+        <div style="font-size:0.78rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#8b949e;margin-bottom:0.8rem;">
+            {lime_title}
+        </div>
+        {rows_html}
+    </div>
+    """, unsafe_allow_html=True)
