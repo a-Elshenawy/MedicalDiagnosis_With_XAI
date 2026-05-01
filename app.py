@@ -279,11 +279,7 @@ if predict_clicked:
     disease  = label_map.get(pred, str(pred))
     rule_msg = apply_rules(conf)
     logging.info(f"Prediction: {disease} | Confidence: {conf:.2f}")
-    st.write({
-    "original": user_input,
-    "after_translation": processed,
-    "token_count": len(processed.split())
-    })
+
     # Run LIME explainer
     lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
 
