@@ -338,7 +338,6 @@ if st.session_state.result:
     def render_explain_card(title, color_class, pairs, is_ar):
         rtl_attr  = 'class="rtl-text"' if is_ar else ""
         rows_html = ""
-        
         for word, val in pairs:
             val_class = "val-pos" if val >= 0 else "val-neg"
             sign      = "+" if val >= 0 else ""
