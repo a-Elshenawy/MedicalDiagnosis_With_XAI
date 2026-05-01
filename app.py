@@ -166,9 +166,7 @@ with st.sidebar:
         logging.info(f"Switched model to {version}")
         st.session_state.last_version = version
 
-    st.markdown("---")
-    st.markdown("### 🔍 Explainer")
-    explainer_choice = st.radio("Method", ["LIME"], index=0)
+
 
     st.markdown("---")
     if "show_logs" not in st.session_state:
@@ -320,26 +318,27 @@ if st.session_state.result:
     rtl          = 'class="rtl-text"' if ar else ""
 
     # ── Main result card ──
+    # ── Main result card ──
     flag       = "🇸🇦" if ar else "🇬🇧"
     lang_label = "Arabic" if ar else "English"
     st.markdown(f"""
     <div class="card card-accent">
       <div class="section-header">{flag} Diagnosis — {lang_label}</div>
       <div class="disease-badge" {rtl}>{disease_show}</div>
-      <div class="conf-label">{"الثقة" if ar else "Confidence"}</div>
-    """, unsafe_allow_html=True)
-    st.progress(conf, text=f"{conf*100:.1f}%")
-    st.markdown(f"""
       <div style="margin-top:0.8rem; color:#8b949e; font-size:0.9rem;" {rtl}>
         {"القاعدة" if ar else "Rule"}: <span style="color:#e6edf3">{rule_show}</span>
       </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    st.markdown(f'<div class="conf-label">{"الثقة" if ar else "Confidence"}</div>', unsafe_allow_html=True)
+    st.progress(conf, text=f"{conf*100:.1f}%")
 
     # ── Explanation card ──
     def render_explain_card(title, color_class, pairs, is_ar):
         rtl_attr  = 'class="rtl-text"' if is_ar else ""
         rows_html = ""
+        
         for word, val in pairs:
             val_class = "val-pos" if val >= 0 else "val-neg"
             sign      = "+" if val >= 0 else ""
