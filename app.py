@@ -302,6 +302,11 @@ if predict_clicked:
 # =========================
 # RESULTS
 # =========================
+st.write({
+    "original": user_input,
+    "after_translation": processed,
+    "token_count": len(processed.split())
+})
 if st.session_state.result:
     r  = st.session_state.result
     ar = st.session_state.display_arabic
