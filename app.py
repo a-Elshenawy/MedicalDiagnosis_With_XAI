@@ -331,25 +331,33 @@ if st.session_state.result:
     """, unsafe_allow_html=True)
     
     st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
-    # ── Explanation card ──
-    def render_explain_card(title, color_class, pairs, is_ar):
-        rtl_attr  = 'class="rtl-text"' if is_ar else ""
-        rows_html = ""
-        for word, val in pairs:
-            val_class = "val-pos" if val >= 0 else "val-neg"
-            sign      = "+" if val >= 0 else ""
-            rows_html += f"""
-            <div class="explain-row">
-              <span class="word-label" {rtl_attr}>{word}</span>
-              <span class="{val_class}">{sign}{val:.4f}</span>
-            </div>"""
-        if not rows_html:
-            rows_html = f'<div style="color:#8b949e;font-size:0.85rem">{"لا توجد بيانات" if is_ar else "No data"}</div>'
-        return f"""
-        <div class="card {color_class}">
-          <div class="section-header">{title}</div>
-          {rows_html}
-        </div>"""
-
+# ── LIME Explanation card ──
     lime_title = "🧠 شرح LIME" if ar else "🧠 LIME Explanation"
-    st.markdown(render_explain_card(lime_title, "card-green", lime_show, ar), unsafe_allow_html=True)
+    st.markdown(f"""
+    <div class="card card-green">
+      <div class="section-header">{lime_title}</div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if lime_show:
+        for word, val in lime_show:
+            val_color = "#3fb950" if val >= 0 else "#f85149"
+            sign      = "+" if val >= 0 else ""
+            align     = "right" if ar else "left"
+            st.markdown(f"""
+            <div style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.35rem 0.2rem;
+                border-bottom: 1px solid #21262d;
+                font-family: 'IBM Plex Mono', monospace;
+                font-size: 0.88rem;
+                direction: {'rtl' if ar else 'ltr'};
+            ">
+                <span style="color:#e6edf3; text-align:{align}">{word}</span>
+                <span style="color:{val_color}; font-weight:600;">{sign}{val:.4f}</span>
+            </div>
+            """, unsafe_allow_html=True)
+    else:
+        st.markdown(f'<div style="color:#8b949e;font-size:0.85rem">{"لا توجد بيانات" if ar else "No data"}</div>', unsafe_allow_html=True)
