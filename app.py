@@ -325,7 +325,7 @@ if st.session_state.result:
     # ── Resolve display values ──
     disease_show = r["disease_ar"] if ar else r["disease_en"]
     rule_show    = r["rule_ar"]    if ar else r["rule_en"]
-    lime_show    = r["lime_ar"]    if ar else r["lime_en"]
+    lime_show    = r["lime_en"]
     conf         = r["conf"]
     rtl          = 'class="rtl-text"' if ar else ""
 
