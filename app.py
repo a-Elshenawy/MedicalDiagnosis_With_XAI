@@ -272,10 +272,11 @@ if version == "v1":
 else:
     data = load_model(MODEL_V2_ID, "models/model-v2.pkl")
 
-model      = data["model"]
-vectorizer = data["vectorizer"]
-label_map  = data["label_map"]
-class_names = data["class_names"]
+model         = data["model"]
+vectorizer    = data["vectorizer"]
+label_map     = data["label_map"]
+class_names   = data["class_names"]
+feature_names = data["feature_names"]   # from pickle — matches model exactly
 
 # =========================
 # EXPLAINERS
@@ -285,11 +286,11 @@ def get_lime(_class_names):
     return build_lime(_class_names)
 
 @st.cache_resource
-def get_shap(_model, _vectorizer, _class_names):
-    return build_shap(_model, _vectorizer, _class_names)
+def get_shap(_model, _feature_names):
+    return build_shap(_model, _feature_names)
 
 lime_explainer = get_lime(class_names)
-shap_explainer, shap_feature_names = get_shap(model, vectorizer, class_names)
+shap_explainer, shap_feature_names = get_shap(model, tuple(feature_names))
 
 # =========================
 # HERO
