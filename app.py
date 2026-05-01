@@ -197,6 +197,11 @@ label_map     = data["label_map"]
 class_names   = data["class_names"]
 feature_names = data["feature_names"]
 
+pred = int(model.predict(X)[0])
+probs = model.predict_proba(X)[0]
+conf  = float(np.max(probs))
+
+disease = label_map.get(pred, str(pred))
 # v3 fix: if label_map maps labels to themselves (numbers),
 # rebuild it from class_names which contain the actual disease strings
 
