@@ -198,7 +198,7 @@ class_names   = data["class_names"]
 feature_names = data["feature_names"]
 
 
-st.write("Has predict_proba:", hasattr(model, "predict_proba"))s
+st.write("Has predict_proba:", hasattr(model, "predict_proba"))
 
 # =========================
 # EXPLAINERS
