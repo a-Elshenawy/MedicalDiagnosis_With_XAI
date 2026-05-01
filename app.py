@@ -200,7 +200,7 @@ feature_names = data["feature_names"]
 # ✅ normalize keys to Python int
 label_map = {int(k): v for k, v in label_map.items()}
 
-st.write("Has predict_proba:", hasattr(model, "predict_proba"))
+
 
 # =========================
 # EXPLAINERS
@@ -298,19 +298,7 @@ if predict_clicked:
         "lime_ar":      translate_pairs(lime_exp),
     }
     st.session_state.display_arabic = arabic_input
-    st.write({
-        "pred_clean": pred,
-        "pred_type_clean": str(type(pred)),
-        "label_map_key_type_after_fix": str(type(list(label_map.keys())[0])),
-        "disease_resolved": disease,
-    })
-    st.write({
-        "pred": pred,
-        "exists_in_map": pred in label_map,
-        "max_key": max(label_map.keys()),
-        "min_key": min(label_map.keys()),
-        "num_keys": len(label_map)
-    })
+
 # =========================
 # RESULTS
 # =========================
