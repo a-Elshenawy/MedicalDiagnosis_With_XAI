@@ -149,7 +149,7 @@ def load_model(file_id, path):
 
 MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
 MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
-MODEL_V3_ID = "1puo1OpWE8dWxQwOKPUUDxkVz4zpCrlBr"   # ← replace when ready
+MODEL_V3_ID = "1puo1OpWE8dWxQwOKPUUDxkVz4zpCrlB"   # ← replace when ready
 
 # Absolute base so all file ops work identically on Streamlit Cloud and locally
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
