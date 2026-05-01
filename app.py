@@ -149,6 +149,7 @@ def load_model(file_id, path):
 
 MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
 MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
+MODEL_V3_ID = "PASTE_YOUR_V3_DRIVE_FILE_ID_HERE"   # ← replace when ready
 
 # Absolute base so all file ops work identically on Streamlit Cloud and locally
 BASE_DIR   = os.path.dirname(os.path.abspath(__file__))
@@ -159,14 +160,12 @@ MODELS_DIR = os.path.join(BASE_DIR, "models")
 # =========================
 with st.sidebar:
     st.markdown("### ⚙️ Model Control")
-    version = st.selectbox("Model Version", ["v1", "v2"])
+    version = st.selectbox("Model Version", ["v1", "v2", "v3"])
     if "last_version" not in st.session_state:
         st.session_state.last_version = version
     if version != st.session_state.last_version:
         logging.info(f"Switched model to {version}")
         st.session_state.last_version = version
-
-
 
     st.markdown("---")
     if "show_logs" not in st.session_state:
@@ -187,14 +186,16 @@ with st.sidebar:
 # =========================
 if version == "v1":
     data = load_model(MODEL_V1_ID, os.path.join(MODELS_DIR, "model-v1.pkl"))
-else:
+elif version == "v2":
     data = load_model(MODEL_V2_ID, os.path.join(MODELS_DIR, "model-v2.pkl"))
+else:
+    data = load_model(MODEL_V3_ID, os.path.join(MODELS_DIR, "model-v3.pkl"))
 
-model        = data["model"]
-vectorizer   = data["vectorizer"]
-label_map    = data["label_map"]
-class_names  = data["class_names"]
-feature_names = data["feature_names"]  # from pickle — matches model exactly
+model         = data["model"]
+vectorizer    = data["vectorizer"]
+label_map     = data["label_map"]
+class_names   = data["class_names"]
+feature_names = data["feature_names"]
 
 # =========================
 # EXPLAINERS
@@ -276,7 +277,6 @@ if predict_clicked:
     # Run LIME explainer
     lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
 
-
     # Translate explanations to Arabic if needed
     def translate_pairs(pairs):
         return [(to_arabic(w), v) for w, v in pairs]
@@ -319,8 +319,6 @@ if st.session_state.result:
     rtl          = 'class="rtl-text"' if ar else ""
 
     # ── Main result card ──
-    # ── Main result card ──
-# ── Main result card ──
     flag       = "🇸🇦" if ar else "🇬🇧"
     lang_label = "Arabic" if ar else "English"
     st.markdown(f"""
@@ -329,9 +327,10 @@ if st.session_state.result:
         <div class="disease-badge" {rtl}>{disease_show}</div>
     </div>
     """, unsafe_allow_html=True)
-    
+
     st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
-# ── LIME Explanation ──
+
+    # ── LIME Explanation ──
     lime_title = "🧠 شرح LIME" if ar else "🧠 LIME Explanation"
     st.markdown(f"**{lime_title}**")
     st.markdown("---")
