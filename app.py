@@ -23,9 +23,111 @@ st.set_page_config(
 # =========================
 # CUSTOM CSS
 # =========================
-st.markdown(""" 
+st.markdown("""
 <style>
-/* (UNCHANGED CSS — omitted here for brevity, keep yours exactly as-is) */
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap');
+
+/* ── Global ── */
+html, body, [class*="css"] {
+    font-family: 'Sora', sans-serif;
+}
+
+/* ── Background ── */
+.stApp {
+    background: linear-gradient(135deg, #0d1117 0%, #0f1923 50%, #0d1117 100%);
+    color: #e6edf3;
+}
+
+/* ── Sidebar ── */
+[data-testid="stSidebar"] {
+    background: #161b22;
+    border-right: 1px solid #21262d;
+}
+[data-testid="stSidebar"] .stSelectbox label,
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] .stButton button {
+    color: #8b949e !important;
+}
+
+/* ── Cards ── */
+.card {
+    background: #161b22;
+    border: 1px solid #21262d;
+    border-radius: 12px;
+    padding: 1.4rem 1.6rem;
+    margin-bottom: 1.2rem;
+}
+.card-accent { border-left: 4px solid #58a6ff; }
+.card-green { border-left: 4px solid #3fb950; }
+.card-purple { border-left: 4px solid #bc8cff; }
+.card-orange { border-left: 4px solid #f0883e; }
+
+/* ── Title ── */
+.hero-title {
+    font-size: 2.4rem;
+    font-weight: 700;
+    color: #e6edf3;
+    letter-spacing: -0.03em;
+    margin-bottom: 0.2rem;
+}
+.hero-sub {
+    color: #8b949e;
+    font-size: 0.95rem;
+    margin-bottom: 2rem;
+    font-weight: 300;
+}
+
+/* ── Disease badge ── */
+.disease-badge {
+    display: inline-block;
+    background: linear-gradient(90deg, #1f6feb, #388bfd);
+    color: #fff;
+    font-size: 1.4rem;
+    font-weight: 700;
+    padding: 0.5rem 1.2rem;
+    border-radius: 8px;
+}
+
+/* ── Explain rows ── */
+.explain-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid #21262d;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.88rem;
+}
+.word-label { color: #e6edf3; }
+.val-pos { color: #3fb950; font-weight: 600; }
+.val-neg { color: #f85149; font-weight: 600; }
+
+/* ── Buttons ── */
+.stButton > button {
+    background: #21262d !important;
+    color: #c9d1d9 !important;
+    border: 1px solid #30363d !important;
+    border-radius: 8px !important;
+}
+
+/* ── Predict button ── */
+.predict-btn > button {
+    background: linear-gradient(90deg, #1f6feb, #388bfd) !important;
+    color: #fff !important;
+    font-weight: 600 !important;
+}
+
+/* ── Text area ── */
+.stTextArea textarea {
+    background: #0d1117 !important;
+    border: 1px solid #30363d !important;
+    color: #e6edf3 !important;
+}
+
+/* ── RTL ── */
+.rtl-text {
+    direction: rtl;
+    text-align: right;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -55,12 +157,18 @@ def load_model(file_id, path):
     if not os.path.exists(path):
         url = f"https://drive.google.com/uc?id={file_id}"
         gdown.download(url, path, quiet=True)
-
     with open(path, "rb") as f:
         return pickle.load(f)
 
 MODEL_V1_ID = "1dk4NtpEGTN1kD9emP7WAgSGS28c0LiOF"
 MODEL_V2_ID = "1cM_go5CgkA0y45GRSsV5czcxXwa-el_4"
+
+# =========================
+# LIME
+# =========================
+@st.cache_resource
+def get_lime(_class_names):
+    return build_lime(_class_names)
 
 # =========================
 # SIDEBAR
@@ -70,8 +178,23 @@ with st.sidebar:
     version = st.selectbox("Model Version", ["v1", "v2"])
 
     st.markdown("---")
-    st.markdown("### 🧠 Explainer")
+    st.markdown("### 🔍 Explainer")
     explainer_choice = st.radio("Method", ["LIME"], index=0)
+
+    st.markdown("---")
+
+    if "show_logs" not in st.session_state:
+        st.session_state.show_logs = False
+
+    if st.button("📋 Toggle Logs"):
+        st.session_state.show_logs = not st.session_state.show_logs
+
+    if st.session_state.show_logs:
+        try:
+            with open("logs/app.log", "r") as f:
+                st.text_area("Logs", f.read(), height=260)
+        except FileNotFoundError:
+            st.info("No logs yet.")
 
 # =========================
 # LOAD MODEL
@@ -85,14 +208,6 @@ model         = data["model"]
 vectorizer    = data["vectorizer"]
 label_map     = data["label_map"]
 class_names   = data["class_names"]
-feature_names = data["feature_names"]
-
-# =========================
-# LIME EXPLAINER
-# =========================
-@st.cache_resource
-def get_lime(_class_names):
-    return build_lime(_class_names)
 
 lime_explainer = get_lime(class_names)
 
@@ -113,23 +228,12 @@ if "display_arabic" not in st.session_state:
     st.session_state.display_arabic = None
 
 # =========================
-# EXAMPLES
-# =========================
-examples = ["fever headache", "sore throat cough", "ألم في الرأس", "stomach pain vomiting"]
-cols = st.columns(len(examples))
-
-for i, ex in enumerate(examples):
-    if cols[i].button(ex):
-        st.session_state.symptom_input = ex
-        st.rerun()
-
-# =========================
 # INPUT
 # =========================
 user_input = st.text_area(
     "Enter symptoms (Arabic or English):",
     value=st.session_state.symptom_input,
-    height=110,
+    height=110
 )
 
 predict_clicked = st.button("🔍 Predict")
@@ -139,7 +243,7 @@ predict_clicked = st.button("🔍 Predict")
 # =========================
 if predict_clicked:
     if not user_input.strip():
-        st.warning("Please enter symptoms.")
+        st.warning("⚠️ Please enter symptoms.")
         st.stop()
 
     arabic_input = is_arabic(user_input)
@@ -156,9 +260,6 @@ if predict_clicked:
 
     lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
 
-    def translate_pairs(pairs):
-        return [(to_arabic(w), v) for w, v in pairs]
-
     st.session_state.result = {
         "arabic_input": arabic_input,
         "disease_en": disease,
@@ -167,9 +268,8 @@ if predict_clicked:
         "rule_en": rule_msg,
         "rule_ar": to_arabic(rule_msg),
         "lime_en": lime_exp,
-        "lime_ar": translate_pairs(lime_exp),
+        "lime_ar": [(to_arabic(w), v) for w, v in lime_exp],
     }
-
     st.session_state.display_arabic = arabic_input
 
 # =========================
@@ -187,12 +287,24 @@ if st.session_state.result:
     st.markdown(f"""
     <div class="card card-accent">
         <div class="disease-badge">{disease_show}</div>
-        <p>Confidence: {conf:.2f}</p>
-        <p>Rule: {rule_show}</p>
+        <div>Confidence: {conf:.2f}</div>
+        <div>{rule_show}</div>
     </div>
     """, unsafe_allow_html=True)
 
-    st.markdown("### 🧠 LIME Explanation")
+    rows = ""
+    for w, v in lime_show:
+        cls = "val-pos" if v >= 0 else "val-neg"
+        rows += f"""
+        <div class="explain-row">
+            <span>{w}</span>
+            <span class="{cls}">{v:.4f}</span>
+        </div>
+        """
 
-    for word, val in lime_show:
-        st.write(f"{word}: {val:.4f}")
+    st.markdown(f"""
+    <div class="card card-green">
+        <div>LIME Explanation</div>
+        {rows}
+    </div>
+    """, unsafe_allow_html=True)
