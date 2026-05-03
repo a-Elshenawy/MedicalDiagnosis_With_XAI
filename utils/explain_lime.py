@@ -11,4 +11,4 @@ def explain_lime(explainer, model, vectorizer, text, top_k=6):
         num_features=top_k,
         num_samples=300
     )
-    return [exp.as](http://exp.as)_list()     
+    return exp.as_list()     
