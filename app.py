@@ -259,6 +259,9 @@ with col_pred:
 # =========================
 # PREDICT
 # =========================
+# =========================
+# PREDICT
+# =========================
 if predict_clicked:
     if not user_input.strip():
         st.warning("⚠️ Please enter at least one symptom.")
@@ -271,44 +274,51 @@ if predict_clicked:
     processed    = basic_clean(processed)
 
     X     = vectorizer.transform([processed])
-    #pred  = model.predict(X)[0]
-    pred = int(np.array(model.predict(X)).flatten()[0])
     probs = model.predict_proba(X)[0]
-    conf  = float(np.max(probs))
 
-    disease  = label_map.get(pred, str(pred))
-    rule_msg = apply_rules(conf)
-    logging.info(f"Prediction: {disease} | Confidence: {conf:.2f}")
+    # Get top 3 predictions
+    top3_indices = np.argsort(probs)[::-1][:3]
 
-    # Run LIME explainer
-    lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
-
-    # Translate explanations to Arabic if needed
     def translate_pairs(pairs):
         return [(to_arabic(w), v) for w, v in pairs]
 
+    lime_exp = explain_lime(lime_explainer, model, vectorizer, processed)
+
+    top3_results = []
+    for rank, idx in enumerate(top3_indices):
+        pred    = int(idx)
+        conf    = float(probs[idx])
+        disease = label_map.get(pred, str(pred))
+        top3_results.append({
+            "rank":       rank + 1,
+            "disease_en": disease,
+            "disease_ar": to_arabic(disease),
+            "conf":       conf,
+            "rule_en":    apply_rules(conf),
+            "rule_ar":    to_arabic(apply_rules(conf)),
+        })
+        logging.info(f"Top {rank+1}: {disease} | Confidence: {conf:.2f}")
+
     st.session_state.result = {
         "arabic_input": arabic_input,
-        "disease_en":   disease,
-        "disease_ar":   to_arabic(disease),
-        "conf":         conf,
-        "rule_en":      rule_msg,
-        "rule_ar":      to_arabic(rule_msg),
+        "top3":         top3_results,
         "lime_en":      lime_exp,
         "lime_ar":      translate_pairs(lime_exp),
     }
     st.session_state.display_arabic = arabic_input
-
 # =========================
 # RESULTS
 # =========================
-
+# =========================
+# RESULTS
+# =========================
 if st.session_state.result:
     r  = st.session_state.result
     ar = st.session_state.display_arabic
 
-    # ── Translate toggle ──
     st.markdown("<hr class='subtle'>", unsafe_allow_html=True)
+
+    # ── Translate toggle ──
     col_toggle, _ = st.columns([1, 4])
     with col_toggle:
         toggle_label = "🌐 عرض بالعربية" if not ar else "🌐 Show in English"
@@ -318,26 +328,33 @@ if st.session_state.result:
             st.rerun()
         st.markdown('</div>', unsafe_allow_html=True)
 
-    # ── Resolve display values ──
-    disease_show = r["disease_ar"] if ar else r["disease_en"]
-    rule_show    = r["rule_ar"]    if ar else r["rule_en"]
-    lime_show    = r["lime_en"]
-    conf         = r["conf"]
-    rtl          = 'class="rtl-text"' if ar else ""
-
-    # ── Main result card ──
+    # ── Top 3 cards ──
+    rank_labels = ["🥇", "🥈", "🥉"]
+    card_accents = ["card-accent", "card-green", "card-purple"]
     flag       = "🇸🇦" if ar else "🇬🇧"
     lang_label = "Arabic" if ar else "English"
-    st.markdown(f"""
-    <div class="card card-accent">
-        <div class="section-header">{flag} Diagnosis — {lang_label}</div>
-        <div class="disease-badge" {rtl}>{disease_show}</div>
-    </div>
-    """, unsafe_allow_html=True)
 
-    st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
+    st.markdown(f'<div class="section-header">{flag} Top 3 Diagnoses — {lang_label}</div>', unsafe_allow_html=True)
+
+    for entry in r["top3"]:
+        rank        = entry["rank"]
+        disease_show = entry["disease_ar"] if ar else entry["disease_en"]
+        rule_show    = entry["rule_ar"]    if ar else entry["rule_en"]
+        conf         = entry["conf"]
+        rtl          = 'class="rtl-text"' if ar else ""
+        medal        = rank_labels[rank - 1]
+        accent       = card_accents[rank - 1]
+
+        st.markdown(f"""
+        <div class="card {accent}">
+            <div class="section-header">{medal} Rank #{rank}</div>
+            <div class="disease-badge" {rtl}>{disease_show}</div>
+        </div>
+        """, unsafe_allow_html=True)
+        st.progress(conf, text=f"{conf*100:.1f}%  ({rule_show})")
 
     # ── LIME Explanation ──
+    lime_show  = r["lime_en"]
     lime_title = "🧠 شرح LIME" if ar else "🧠 LIME Explanation"
     st.markdown(f"**{lime_title}**")
     st.markdown("---")
